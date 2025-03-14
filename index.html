@@ -59,24 +59,27 @@
         const bpmRef = firebase.database().ref("bpm_data/bpm");
 
         function fetchBPM() {
-            bpmRef.on("child_added", (snapshot) => {
-                    const bpm = snapshot.val();
-                    document.getElementById("bpm").innerText = `BPM: ${bpm}`;
-                });
+    bpmRef.on("value", (snapshot) => {
+        if (snapshot.exists()) {
+            const bpm = snapshot.val();
+            document.getElementById("bpm").innerText = `BPM: ${bpm}`;
 
-                // Suggest actions based on BPM
-                let suggestion = "";
-                if (bpm < 60) {
-                    suggestion = "Your heart rate is low. Consider resting and drinking water.";
-                } else if (bpm >= 60 && bpm <= 100) {
-                    suggestion = "Your heart rate is normal. Keep maintaining a healthy lifestyle!";
-                } else {
-                    suggestion = "Your heart rate is high. Consider relaxing or consulting a doctor.";
-                }
+            // Suggest actions based on BPM
+            let suggestion = "";
+            if (bpm < 60) {
+                suggestion = "Your heart rate is low. Consider resting and drinking water.";
+            } else if (bpm >= 60 && bpm <= 100) {
+                suggestion = "Your heart rate is normal. Keep maintaining a healthy lifestyle!";
+            } else {
+                suggestion = "Your heart rate is high. Consider relaxing or consulting a doctor.";
+            }
 
-                document.getElementById("suggestion").innerText = suggestion;
-            });
+            document.getElementById("suggestion").innerText = suggestion;
+        } else {
+            console.log("No BPM data found.");
         }
+    });
+}
 
         window.onload = fetchBPM;
     </script>
