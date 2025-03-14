@@ -45,7 +45,7 @@
     <script>
         // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "YAIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
+            apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
             authDomain: "bpm-monitor-b93cd.firebaseapp.com",
             databaseURL: "https://bpm-monitor-b93cd-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "bpm-monitor-b93cd",
@@ -59,9 +59,10 @@
         const bpmRef = firebase.database().ref("bpm_data/bpm");
 
         function fetchBPM() {
-            bpmRef.on("value", (snapshot) => {
-                const bpm = snapshot.val();
-                document.getElementById("bpm").innerText = `BPM: ${bpm}`;
+            bpmRef.on("child_added", (snapshot) => {
+                    const bpm = snapshot.val();
+                    document.getElementById("bpm").innerText = `BPM: ${bpm}`;
+                });
 
                 // Suggest actions based on BPM
                 let suggestion = "";
