@@ -56,8 +56,12 @@
         <button class="reset-btn" onclick="resetMeasurement()">Reset & Measure Again</button>
     </div>
 
-    <script>
-        // Firebase Configuration
+    <script type="module">
+        // Import Firebase modules
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+      
+        // Firebase configuration (USE YOUR OWN CONFIG)
         const firebaseConfig = {
             apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
             authDomain: "bpm-monitor-b93cd.firebaseapp.com",
@@ -67,40 +71,26 @@
             messagingSenderId: "229689202153",
             appId: "1:229689202153:web:8be53adfea19427fd5a778"
         };
-
+      
         // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        const bpmRef = firebase.database().ref("bpm_data/bpm");
-        const resetRef = firebase.database().ref("bpm_data/reset");
-
-        function fetchBPM() {
-            bpmRef.on("value", (snapshot) => {
-                if (snapshot.exists()) {
-                    const bpm = snapshot.val();
-                    document.getElementById("bpm").innerText = `BPM: ${bpm}`;
-
-                    // Suggest actions based on BPM
-                    let suggestion = "";
-                    if (bpm < 60) {
-                        suggestion = "Your heart rate is low. Consider resting and drinking water.";
-                    } else if (bpm >= 60 && bpm <= 100) {
-                        suggestion = "Your heart rate is normal. Keep maintaining a healthy lifestyle!";
-                    } else {
-                        suggestion = "Your heart rate is high. Consider relaxing or consulting a doctor.";
-                    }
-
-                    document.getElementById("suggestion").innerText = suggestion;
-                }
-            });
-        }
-
-        // Function to reset measurement (send reset signal to Firebase)
-        function resetMeasurement() {
-            resetRef.set(true);
-        }
-
-        window.onload = fetchBPM;
-    </script>
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+      
+        // Reference to the BPM value in Firebase
+        const bpmRef = ref(database, "bpm_data/bpm");
+      
+        // Listen for real-time changes
+        onValue(bpmRef, (snapshot) => {
+          const bpmValue = snapshot.val();
+          if (bpmValue !== null) {
+            document.getElementById("bpm-display").innerText = `BPM: ${bpmValue}`;
+          }
+        });
+      
+      </script>
+      
+      <h2 id="bpm-display">BPM: --</h2>
+      
 
 </body>
 </html>
