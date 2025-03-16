@@ -66,7 +66,7 @@
         // Import Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-      
+    
         // Firebase configuration (USE YOUR OWN CONFIG)
         const firebaseConfig = {
             apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
@@ -77,67 +77,52 @@
             messagingSenderId: "229689202153",
             appId: "1:229689202153:web:8be53adfea19427fd5a778"
         };
-      
+    
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
-      
-        // Reference to BPM value in Firebase
+    
+        // Reference to the BPM value in Firebase
         const bpmRef = ref(database, "bpm_data/bpm");
-
-        // Listen for real-time changes and update the display
+        const resetRef = ref(database, "bpm_data/reset");
+    
+        // Listen for real-time BPM updates
         onValue(bpmRef, (snapshot) => {
             const bpmValue = snapshot.val();
-            const bpmDisplay = document.getElementById("bpm");
-            const suggestionDisplay = document.getElementById("suggestion");
-
-            if (bpmValue !== null && !isNaN(bpmValue)) {
-                bpmDisplay.innerText = `BPM: ${bpmValue}`;
-                
-                // Determine suggestion based on BPM
-if (bpmValue < 60) {
-    suggestionDisplay.innerText = "Your heart rate is low. Consider light exercise or consulting a doctor if you feel unwell.";
-    suggestionDisplay.style.color = "red";  // 🔴 Low BPM is now RED
-} else if (bpmValue >= 60 && bpmValue <= 100) {
-    suggestionDisplay.innerText = "Your heart rate is normal. Keep up a healthy lifestyle!";
-    suggestionDisplay.style.color = "green";  // 🟢 Normal BPM is GREEN
-} else {
-    suggestionDisplay.innerText = "Your heart rate is high. Try to relax, breathe deeply, and monitor your condition.";
-    suggestionDisplay.style.color = "red";  // 🔴 High BPM is RED
-}
-
+            const bpmElement = document.getElementById("bpm");
+            const suggestionElement = document.getElementById("suggestion");
+    
+            if (bpmValue !== null && bpmValue !== "RESET") {
+                bpmElement.innerText = `BPM: ${bpmValue}`;
+    
+                // Provide health suggestions based on BPM value
+                if (bpmValue < 60) {
+                    suggestionElement.innerText = "Your heart rate is low. Consider light exercise or consulting a doctor if you feel unwell.";
+                    bpmElement.style.color = "red";  // Set text to RED for low BPM
+                } else if (bpmValue > 100) {
+                    suggestionElement.innerText = "Your heart rate is high. Try to relax, breathe deeply, and monitor your condition.";
+                    bpmElement.style.color = "red";  // Set text to RED for high BPM
+                } else {
+                    suggestionElement.innerText = "Your heart rate is normal. Keep up a healthy lifestyle!";
+                    bpmElement.style.color = "green";  // Set text to GREEN for normal BPM
+                }
             } else {
-                bpmDisplay.innerText = "Waiting for data...";
-                suggestionDisplay.innerText = "";
+                bpmElement.innerText = "Waiting for data...";
+                suggestionElement.innerText = "";
+                bpmElement.style.color = "black"; // Reset text color
             }
         });
-
-        // Function to reset measurement, turn off LEDs, and reset OLED
+    
+        // Function to reset measurement
         function resetMeasurement() {
-            const bpmDisplay = document.getElementById("bpm");
-            const suggestionDisplay = document.getElementById("suggestion");
-
-            // Reset BPM value in Firebase
-            set(ref(database, "bpm_data/bpm"), "Waiting for data...")
-                .then(() => {
-                    bpmDisplay.innerText = "Waiting for data...";
-                    suggestionDisplay.innerText = "";
-                    console.log("BPM reset in Firebase");
-                })
-                .catch(error => console.error("Error resetting BPM:", error));
-
-            // Set reset flag in Firebase to signal Arduino
-            set(ref(database, "bpm_data/reset"), true)
-                .then(() => console.log("Reset flag sent to Firebase"))
-                .catch(error => console.error("Error sending reset flag:", error));
-
-            // After 2 seconds, turn off the reset flag (so Arduino can detect new resets)
-            setTimeout(() => {
-                set(ref(database, "bpm_data/reset"), false);
-                console.log("Reset flag cleared in Firebase");
-            }, 2000);
+            set(bpmRef, "RESET"); // Send reset command to Arduino
+            set(resetRef, true);  // Firebase flag for Arduino
+    
+            // Update UI instantly
+            document.getElementById("bpm").innerText = "Waiting for data...";
+            document.getElementById("suggestion").innerText = "";
         }
     </script>
-
+    
 </body>
 </html>
