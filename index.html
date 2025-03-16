@@ -120,7 +120,6 @@
             const bpmRef = database.ref("bpm_data/bpm");
             const resetRef = database.ref("bpm_data/reset");
 
-            bpmRef.set("RESET");  // ✅ Send reset command to Firebase
             resetRef.set(true);  // ✅ Trigger Arduino to reset
 
             // ✅ Update UI instantly
