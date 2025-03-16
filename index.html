@@ -116,17 +116,21 @@
     
         // Function to reset measurement
         function resetMeasurement() {
-            const database = firebase.database();
-            const bpmRef = database.ref("bpm_data/bpm");
-            const resetRef = database.ref("bpm_data/reset");
-
-            resetRef.set(true);  // ✅ Trigger Arduino to reset
-
-            // ✅ Update UI instantly
-            document.getElementById("bpm").innerText = "Waiting for data...";
-            document.getElementById("suggestion").innerText = "";
+    // Set "reset" flag to true in Firebase
+    set(resetRef, true)
+        .then(() => {
             console.log("📡 Reset signal sent to Firebase!");
-            }
+        })
+        .catch(error => {
+            console.error("⚠️ Error setting reset flag:", error);
+        });
+
+    // ✅ Update UI instantly
+    document.getElementById("bpm").innerText = "Waiting for data...";
+    document.getElementById("suggestion").innerText = "";
+    document.getElementById("bpm").style.color = "black";
+}
+
 
     </script>   
     
