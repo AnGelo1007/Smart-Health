@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Health Monitoring</title>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
     <style>
         body {
             display: flex;
@@ -79,18 +79,26 @@
         // Reference to the BPM value in Firebase
         const bpmRef = ref(database, "bpm_data/bpm");
       
-        // Listen for real-time changes
+        // Listen for real-time changes and update the display
         onValue(bpmRef, (snapshot) => {
           const bpmValue = snapshot.val();
           if (bpmValue !== null) {
-            document.getElementById("bpm-display").innerText = `BPM: ${bpmValue}`;
+            document.getElementById("bpm").innerText = `BPM: ${bpmValue}`;
           }
         });
-      
-      </script>
-      
-      <h2 id="bpm-display">BPM: --</h2>
-      
+
+        // Function to reset measurement and turn off LEDs
+        function resetMeasurement() {
+            // Reset Firebase BPM value
+            set(ref(database, "bpm_data/bpm"), "Waiting for data...");
+
+            // Update the UI back to "Waiting for data..."
+            document.getElementById("bpm").innerText = "Waiting for data...";
+
+            // Turn off LEDs and reset OLED (assuming you have another Firebase path for this)
+            set(ref(database, "bpm_data/reset"), true);
+        }
+    </script>
 
 </body>
 </html>
