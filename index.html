@@ -116,19 +116,21 @@
     
         // Function to reset measurement
         function resetMeasurement() {
-    // Set "reset" flag to true in Firebase
-    set(resetRef, true)
+    const resetRef = ref(database, "bpm_data/reset");
+
+    set(resetRef, true) // ✅ Trigger reset flag in Firebase
+
         .then(() => {
             console.log("📡 Reset signal sent to Firebase!");
-        })
-        .catch(error => {
-            console.error("⚠️ Error setting reset flag:", error);
-        });
 
-    // ✅ Update UI instantly
-    document.getElementById("bpm").innerText = "Waiting for data...";
-    document.getElementById("suggestion").innerText = "";
-    document.getElementById("bpm").style.color = "black";
+            // ✅ Instantly update UI to reflect reset
+            document.getElementById("bpm").innerText = "Waiting for data...";
+            document.getElementById("suggestion").innerText = "";
+
+        })
+        .catch((error) => {
+            console.error("❌ Error sending reset:", error);
+        });
 }
 
 
