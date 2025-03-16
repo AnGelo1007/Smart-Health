@@ -113,25 +113,25 @@
                 bpmElement.style.color = "black"; // Reset text color
             }
         });
-    
-        // Function to reset measurement
+        
+        // ✅ Function to send reset signal to Firebase
         function resetMeasurement() {
-    const resetRef = ref(database, "bpm_data/reset");
+            const resetRef = firebase.database().ref("bpm_data/reset");
 
-    set(resetRef, true) // ✅ Trigger reset flag in Firebase
+            resetRef.set(true)  // ✅ Set reset flag to true
+                .then(() => {
+                    console.log("📡 Reset signal sent to Firebase!");
 
-        .then(() => {
-            console.log("📡 Reset signal sent to Firebase!");
+                    // ✅ Instantly update UI to reflect reset
+                    document.getElementById("bpm").innerText = "Waiting for data...";
+                    document.getElementById("suggestion").innerText = "";
 
-            // ✅ Instantly update UI to reflect reset
-            document.getElementById("bpm").innerText = "Waiting for data...";
-            document.getElementById("suggestion").innerText = "";
-
-        })
-        .catch((error) => {
-            console.error("❌ Error sending reset:", error);
+                })
+                .catch((error) => {
+                    console.error("❌ Error sending reset:", error);
         });
 }
+
 
 
     </script>   
