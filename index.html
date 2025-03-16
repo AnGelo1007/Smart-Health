@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Health Monitoring</title>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"></script>
     <style>
         body {
             display: flex;
@@ -29,6 +31,19 @@
             border-radius: 8px;
             margin-top: 10px;
         }
+        .reset-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .reset-btn:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -38,33 +53,28 @@
         <p>Latest BPM Reading:</p>
         <div id="bpm" class="bpm-box">Waiting for data...</div>
         <p id="suggestion"></p>
+        <button class="reset-btn" onclick="resetMeasurement()">Reset & Measure Again</button>
     </div>
 
-    <script type="module">
-        // Import Firebase modules
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
-
-        // Firebase Configuration (Replace with your credentials)
+    <script>
+        // Firebase Configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
-            authDomain: "bpm-monitor-b93cd.firebaseapp.com",
-            databaseURL: "https://bpm-monitor-b93cd-default-rtdb.asia-southeast1.firebasedatabase.app/",
-            projectId: "bpm-monitor-b93cd",
-            storageBucket: "bpm-monitor-b93cd.firebasestorage.app",
-            messagingSenderId: "229689202153",
-            appId: "1:229689202153:web:8be53adfea19427fd5a778"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
         };
 
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
+        const bpmRef = firebase.database().ref("bpm_data/bpm");
+        const resetRef = firebase.database().ref("bpm_data/reset");
 
-        // Function to fetch BPM in real-time
         function fetchBPM() {
-            const bpmRef = ref(database, "bpm_data/bpm");
-
-            onValue(bpmRef, (snapshot) => {
+            bpmRef.on("value", (snapshot) => {
                 if (snapshot.exists()) {
                     const bpm = snapshot.val();
                     document.getElementById("bpm").innerText = `BPM: ${bpm}`;
@@ -80,10 +90,13 @@
                     }
 
                     document.getElementById("suggestion").innerText = suggestion;
-                } else {
-                    console.log("No BPM data found.");
                 }
             });
+        }
+
+        // Function to reset measurement (send reset signal to Firebase)
+        function resetMeasurement() {
+            resetRef.set(true);
         }
 
         window.onload = fetchBPM;
