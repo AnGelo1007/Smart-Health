@@ -59,7 +59,8 @@
         <p>Latest BPM Reading:</p>
         <div id="bpm" class="bpm-box">Waiting for data...</div>
         <p id="suggestion" class="suggestion"></p>
-        <button class="reset-btn" onclick="resetMeasurement()">Reset & Measure Again</button>
+        <button class="reset-btn" onclick="resetMeasurement()">🔄 Reset & Measure Again</button>
+
     </div>
 
     <script type="module">
@@ -115,14 +116,20 @@
     
         // Function to reset measurement
         function resetMeasurement() {
-            set(bpmRef, "RESET"); // Send reset command to Arduino
-            set(resetRef, true);  // Firebase flag for Arduino
-    
-            // Update UI instantly
+            const database = firebase.database();
+            const bpmRef = database.ref("bpm_data/bpm");
+            const resetRef = database.ref("bpm_data/reset");
+
+            bpmRef.set("RESET");  // ✅ Send reset command to Firebase
+            resetRef.set(true);  // ✅ Trigger Arduino to reset
+
+            // ✅ Update UI instantly
             document.getElementById("bpm").innerText = "Waiting for data...";
             document.getElementById("suggestion").innerText = "";
-        }
-    </script>
+            console.log("📡 Reset signal sent to Firebase!");
+            }
+
+    </script>   
     
 </body>
 </html>
