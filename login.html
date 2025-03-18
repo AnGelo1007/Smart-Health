@@ -67,10 +67,12 @@
         // ✅ Attach event listener to login form
         document.getElementById("login-form").addEventListener("submit", login);
 
-        // ✅ Redirect logged-in users automatically
+        // ✅ Redirect logged-in users automatically (Prevents refresh loop)
         onAuthStateChanged(auth, (user) => {
-            if (user && localStorage.getItem("userLoggedIn")) {
-                window.location.href = "index.html"; 
+            if (user) {
+                if (window.location.pathname.includes("login.html")) {
+                    window.location.href = "index.html"; 
+                }
             }
         });
     </script>
