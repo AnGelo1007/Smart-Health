@@ -6,6 +6,7 @@
     <title>Smart Health Monitoring</title>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+    
     <style>
         body {
             display: flex;
@@ -18,17 +19,15 @@
 
         .container {
             display: flex;
-            justify-content: space-between; /* Ensures side-by-side layout */
-            align-items: flex-start;
+            gap: 20px;
             background: white;
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             width: 80%;
-            gap: 20px;
+            min-width: 600px;
         }
 
-        /* Heart Rate Monitor Section */
         .bpm-section, .bpm-history {
             flex: 1;
             text-align: center;
@@ -36,6 +35,9 @@
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .bpm-box {
@@ -70,34 +72,10 @@
             background-color: #0056b3;
         }
 
-        /* BPM History Section (Right Side) */
-        .bpm-history {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 300px;
-        }
-
-        .bpm-history h2 {
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            padding: 10px;
-            background: #007BFF;
-            color: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-        }
-
         .history-list {
             list-style: none;
             padding: 0;
-            text-align: center;
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
             flex-grow: 1;
         }
@@ -146,7 +124,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
@@ -163,69 +141,53 @@
         const bpmRef = ref(database, "bpm_data/bpm");
         const historyRef = ref(database, "bpm_history");
 
-        // Listen for BPM updates
-        onValue(bpmRef, (snapshot) => {
+        onValue(bpmRef, async (snapshot) => {
             const bpmValue = snapshot.val();
             const bpmElement = document.getElementById("bpm");
             const suggestionElement = document.getElementById("suggestion");
 
             if (bpmValue !== null && bpmValue !== "RESET") {
                 bpmElement.innerText = `BPM: ${bpmValue}`;
-                
-                // Get timestamp
+
                 const timestamp = new Date().toLocaleString();
+                const historySnapshot = await get(historyRef);
+                const historyExists = historySnapshot.exists() && Object.values(historySnapshot.val()).some(entry => entry.bpm === bpmValue && entry.timestamp === timestamp);
 
-                // Push BPM data to history with timestamp
-                push(historyRef, { bpm: bpmValue, timestamp });
+                if (!historyExists) push(historyRef, { bpm: bpmValue, timestamp });
 
-                // Display suggestion based on BPM
-                if (bpmValue < 60) {
-                    suggestionElement.innerText = "Heart rate is low. Consider light exercise or consulting a doctor.";
-                    bpmElement.style.color = "red";
-                } else if (bpmValue > 100) {
-                    suggestionElement.innerText = "Heart rate is high. Try to relax and breathe deeply.";
-                    bpmElement.style.color = "red";
-                } else {
-                    suggestionElement.innerText = "Heart rate is normal. Keep up a healthy lifestyle!";
-                    bpmElement.style.color = "green";
-                }
+                // BPM Suggestions
+                bpmElement.style.color = bpmValue < 60 || bpmValue > 100 ? "red" : "green";
+                suggestionElement.innerText = bpmValue < 60 ? "Heart rate is low. Consider light exercise or consulting a doctor."
+                    : bpmValue > 100 ? "Heart rate is high. Try to relax and breathe deeply."
+                    : "Heart rate is normal. Keep up a healthy lifestyle!";
             }
         });
 
-        // Load BPM History
-        onValue(historyRef, (snapshot) => {
-            const historyList = document.getElementById("history-list");
-            historyList.innerHTML = ""; // Clear previous entries
+        function loadHistory() {
+            onValue(historyRef, (snapshot) => {
+                const historyList = document.getElementById("history-list");
+                historyList.innerHTML = snapshot.exists()
+                    ? Object.entries(snapshot.val()).reverse().map(([key, entry]) =>
+                        `<li>${entry.timestamp} - BPM: <strong>${entry.bpm}</strong>
+                        <button class="delete-btn" onclick="deleteEntry('${key}')">🗑</button></li>`
+                    ).join("")
+                    : "<li>No BPM history available.</li>";
+            });
+        }
 
-            const data = snapshot.val();
-            
-            if (data) {
-                Object.entries(data).forEach(([key, entry]) => {
-                    const { bpm, timestamp } = entry;
-                    const li = document.createElement("li");
-                    li.innerHTML = `${bpm} BPM - ${timestamp} 
-                        <button class='delete-btn' onclick='deleteEntry("${key}")'>🗑️</button>`;
-                    historyList.appendChild(li);
-                });
-            }
-        });
-
-        // Delete an entry from history
         function deleteEntry(key) {
             remove(ref(database, `bpm_history/${key}`));
         }
 
-        // Reset measurement and clear display
         function resetMeasurement() {
             set(ref(database, "bpm_data/reset"), true);
             document.getElementById("bpm").innerText = "Waiting for data...";
             document.getElementById("suggestion").innerText = "";
         }
 
-        // Make functions globally accessible
+        loadHistory();
         window.deleteEntry = deleteEntry;
         window.resetMeasurement = resetMeasurement;
-
     </script>
 </body>
 </html>
