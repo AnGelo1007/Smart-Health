@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Health Monitoring</title>
+    <title>Login | Smart Health Monitor</title>
+
+    <!-- ✅ Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+
     <style>
         body {
             display: flex;
@@ -18,123 +22,95 @@
         .container {
             text-align: center;
             background: white;
-            padding: 20px;
+            padding: 30px;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 350px;
         }
-        .bpm-box {
-            font-size: 24px;
-            font-weight: bold;
+        input {
+            width: 100%;
             padding: 10px;
-            background: #ffeb3b;
-            display: inline-block;
-            border-radius: 8px;
-            margin-top: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
         }
-        .suggestion {
+        .btn {
             margin-top: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
-        }
-        .reset-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 18px;
+            padding: 12px;
+            font-size: 16px;
             background-color: #007BFF;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            width: 100%;
         }
-        .reset-btn:hover {
-            background-color: #0056b3;
+        .btn:hover { background-color: #0056b3; }
+        .switch {
+            margin-top: 10px;
+            font-size: 14px;
         }
+        .switch a {
+            color: #007BFF;
+            text-decoration: none;
+        }
+        .switch a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Heart Rate Monitor</h1>
-        <p>Latest BPM Reading:</p>
-        <div id="bpm" class="bpm-box">Waiting for data...</div>
-        <p id="suggestion" class="suggestion"></p>
-        <button class="reset-btn" onclick="resetMeasurement()">🔄 Reset & Measure Again</button>
+        <h2>Login</h2>
+        <input type="email" id="login-email" placeholder="Enter Email">
+        <input type="password" id="login-password" placeholder="Enter Password">
+        <button class="btn" onclick="login()">Login</button>
 
+        <p class="switch">Don't have an account? <a href="signup.html">Sign Up</a></p>
     </div>
 
     <script type="module">
-        // ✅ Import Firebase modules (Corrected)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     
-        // ✅ Firebase configuration (Check your storageBucket in Firebase console)
+        // Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
             authDomain: "bpm-monitor-b93cd.firebaseapp.com",
             databaseURL: "https://bpm-monitor-b93cd-default-rtdb.asia-southeast1.firebasedatabase.app/",
             projectId: "bpm-monitor-b93cd",
-            storageBucket: "bpm-monitor-b93cd.appspot.com",  // ✅ Corrected storage bucket
+            storageBucket: "bpm-monitor-b93cd.appspot.com",
             messagingSenderId: "229689202153",
             appId: "1:229689202153:web:8be53adfea19427fd5a778"
         };
     
-        // ✅ Initialize Firebase
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
+        const auth = getAuth(app);
     
-        // ✅ Firebase references
-        const bpmRef = ref(database, "bpm_data/bpm");
-        const resetRef = ref(database, "bpm_data/reset");
+        // Login Function
+        function login() {
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
     
-        // ✅ Listen for real-time BPM updates
-        onValue(bpmRef, (snapshot) => {
-            const bpmValue = snapshot.val();
-            const bpmElement = document.getElementById("bpm");
-            const suggestionElement = document.getElementById("suggestion");
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    alert("✅ Login Successful!");
+                    window.location.href = "index.html"; // Redirect on success
+                })
+                .catch((error) => alert("❌ Error: " + error.message));
+        }
     
-            if (bpmValue !== null && bpmValue !== "RESET") {
-                bpmElement.innerText = `BPM: ${bpmValue}`;
-    
-                // ✅ Provide health suggestions based on BPM value
-                if (bpmValue < 60) {
-                    suggestionElement.innerText = "Your heart rate is low. Consider light exercise or consulting a doctor.";
-                    bpmElement.style.color = "red";  // 🔴 RED for low BPM
-                } else if (bpmValue > 100) {
-                    suggestionElement.innerText = "Your heart rate is high. Try to relax and breathe deeply.";
-                    bpmElement.style.color = "red";  // 🔴 RED for high BPM
-                } else {
-                    suggestionElement.innerText = "Your heart rate is normal. Keep up a healthy lifestyle!";
-                    bpmElement.style.color = "green";  // 🟢 GREEN for normal BPM
-                }
-            } else {
-                bpmElement.innerText = "Waiting for data...";
-                suggestionElement.innerText = "";
-                bpmElement.style.color = "black"; // Reset text color
+        // Auto Redirect If Logged In
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                window.location.href = "index.html";
             }
         });
     
-        // ✅ Function to send reset signal to Firebase
-        function resetMeasurement() {
-            console.log("🔄 Reset button clicked!"); // Debugging
-    
-            set(resetRef, true)  // ✅ Correct way to set data in Firebase v9+
-                .then(() => {
-                    console.log("📡 Reset signal sent to Firebase!");
-    
-                    // ✅ Instantly update UI
-                    document.getElementById("bpm").innerText = "Waiting for data...";
-                    document.getElementById("suggestion").innerText = "";
-                })
-                .catch((error) => {
-                    console.error("❌ Error sending reset:", error);
-                });
-        }
-    
-        // ✅ Attach function to global scope so HTML can use it
-        window.resetMeasurement = resetMeasurement;
-    
-    </script>       
-    
+        // Expose login function globally
+        window.login = login;
+    </script>
+           
+
 </body>
 </html>
