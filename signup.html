@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Smart Health Monitor</title>
+
+    <!-- ✅ Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
+
+    <style>
+        body { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #f0f8ff; font-family: Arial, sans-serif; }
+        .container { text-align: center; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); width: 350px; }
+        input { width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .btn { margin-top: 10px; padding: 12px; font-size: 16px; background-color: #007BFF; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
+        .btn:hover { background-color: #0056b3; }
+        .switch { margin-top: 10px; font-size: 14px; }
+        .switch a { color: #007BFF; text-decoration: none; }
+        .switch a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Sign Up</h2>
+        <input type="email" id="signup-email" placeholder="Enter Email">
+        <input type="password" id="signup-password" placeholder="Enter Password">
+        <button class="btn" onclick="signUp()">Sign Up</button>
+
+        <p class="switch">Already have an account? <a href="login.html">Login</a></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // ✅ Firebase Configuration (USE THE SAME CONFIG FOR ALL PAGES)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
+            authDomain: "bpm-monitor-b93cd.firebaseapp.com",
+            databaseURL: "https://bpm-monitor-b93cd-default-rtdb.asia-southeast1.firebasedatabase.app/",
+            projectId: "bpm-monitor-b93cd",
+            storageBucket: "bpm-monitor-b93cd.appspot.com",
+            messagingSenderId: "229689202153",
+            appId: "1:229689202153:web:8be53adfea19427fd5a778"
+        };
+
+        // ✅ Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth();
+        const database = getDatabase(app);
+
+        // ✅ Sign Up Function
+        function signUp() {
+            const email = document.getElementById("signup-email").value;
+            const password = document.getElementById("signup-password").value;
+
+            createUserWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    const user = userCredential.user;
+                    
+                    // ✅ Save user data in Firebase
+                    set(ref(database, "users/" + user.uid), {
+                        email: user.email,
+                        bpmHistory: []
+                    });
+
+                    alert("✅ Sign Up Successful!");
+                    window.location.href = "index.html"; 
+                })
+                .catch((error) => alert("❌ Error: " + error.message));
+        }
+
+        window.signUp = signUp;
+    </script>       
+
+</body>
+</html>
