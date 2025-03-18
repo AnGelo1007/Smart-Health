@@ -47,22 +47,28 @@
         const auth = getAuth(app);
 
         // ✅ Login Function
-        function login() {
-            const email = document.getElementById("login-email").value;
-            const password = document.getElementById("login-password").value;
+        function login(event) {
+    event.preventDefault(); // Stop form from refreshing the page
 
-            signInWithEmailAndPassword(auth, email, password)
-                .then((userCredential) => {
-                    alert("✅ Login Successful!");
-                    window.location.href = "index.html"; 
-                })
-                .catch((error) => alert("❌ Error: " + error.message));
-        }
+    const email = document.getElementById("login-email").value;
+    const password = document.getElementById("login-password").value;
+
+    signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            alert("✅ Login Successful!");
+            window.location.href = "https://angelo1007.github.io/Smart-Health/index.html"; // Redirect on success
+        })
+        .catch((error) => alert("❌ Error: " + error.message));
+}
+
+// Attach event listener if login button is in a form
+document.getElementById("login-form").addEventListener("submit", login);
+
 
         // ✅ Redirect logged-in users automatically
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                window.location.href = "index.html"; 
+                window.location.href = "https://angelo1007.github.io/Smart-Health/index.html"; 
             }
         });
 
