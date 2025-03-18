@@ -20,9 +20,11 @@
 
     <div class="container">
         <h2>Login</h2>
-        <input type="email" id="login-email" placeholder="Enter Email">
-        <input type="password" id="login-password" placeholder="Enter Password">
-        <button class="btn" onclick="login()">Login</button>
+        <form id="login-form">
+            <input type="email" id="login-email" placeholder="Enter Email" required>
+            <input type="password" id="login-password" placeholder="Enter Password" required>
+            <button class="btn" type="submit">Login</button>
+        </form>
 
         <p class="switch">Don't have an account? <a href="signup.html">Sign Up</a></p>
     </div>
@@ -31,7 +33,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-        // ✅ Firebase Configuration (SAME AS signup.html)
+        // ✅ Firebase Configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
             authDomain: "bpm-monitor-b93cd.firebaseapp.com",
@@ -48,31 +50,29 @@
 
         // ✅ Login Function
         function login(event) {
-    event.preventDefault(); // Stop form from refreshing the page
+            event.preventDefault(); // Prevent page refresh
 
-    const email = document.getElementById("login-email").value;
-    const password = document.getElementById("login-password").value;
+            const email = document.getElementById("login-email").value;
+            const password = document.getElementById("login-password").value;
 
-    signInWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
-            alert("✅ Login Successful!");
-            window.location.href = "https://angelo1007.github.io/Smart-Health/index.html"; // Redirect on success
-        })
-        .catch((error) => alert("❌ Error: " + error.message));
-}
+            signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    alert("✅ Login Successful!");
+                    localStorage.setItem("userLoggedIn", "true"); // Store login state
+                    window.location.href = "index.html"; // Redirect on success
+                })
+                .catch((error) => alert("❌ Error: " + error.message));
+        }
 
-// Attach event listener if login button is in a form
-document.getElementById("login-form").addEventListener("submit", login);
-
+        // ✅ Attach event listener to login form
+        document.getElementById("login-form").addEventListener("submit", login);
 
         // ✅ Redirect logged-in users automatically
         onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.location.href = "https://angelo1007.github.io/Smart-Health/index.html"; 
+            if (user && localStorage.getItem("userLoggedIn")) {
+                window.location.href = "index.html"; 
             }
         });
-
-        window.login = login;
     </script>
 
 </body>
