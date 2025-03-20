@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,14 +29,16 @@
             margin: 10px 0;
         }
 
-        .bpm-section, .bpm-history {
+        .bpm-section,
+        .bpm-history {
             flex: 1;
             text-align: center;
             padding: 10px;
             margin: 5px;
         }
 
-        h2, h3 {
+        h2,
+        h3 {
             margin: 2px 0;
         }
 
@@ -53,7 +56,7 @@
             padding: 0;
             margin: 5px 0;
             height: 200px;
-            overflow-y: auto; /* Enables scrolling */
+            overflow-y: auto;
         }
 
         .history-list li {
@@ -82,8 +85,8 @@
         }
 
         .advice-section {
-            background: #ecfefe; /* Light green background for advice section */
-            border: 1px solid #c8e6c9; /* Light border */
+            background: #ecfefe;
+            border: 1px solid #c8e6c9;
             border-radius: 8px;
             padding: 10px;
             margin: 10px 0;
@@ -93,9 +96,12 @@
             body * {
                 visibility: hidden;
             }
-            .print-area, .print-area * {
+
+            .print-area,
+            .print-area * {
                 visibility: visible;
             }
+
             .print-area {
                 position: fixed;
                 left: 0;
@@ -109,38 +115,51 @@
                 justify-content: center;
                 text-align: left;
             }
-            .print-area h2, .print-area h3 {
+
+            .print-area h2,
+            .print-area h3 {
                 text-align: center;
                 font-size: 16px;
             }
+
             .print-area table {
                 width: 100%;
                 border-collapse: collapse;
                 font-size: 12px;
             }
-            .print-area th, .print-area td {
+
+            .print-area th,
+            .print-area td {
                 border: 1px solid black;
                 padding: 2px;
                 text-align: left;
             }
+
             .print-area th {
                 background-color: #ffeb3b;
             }
+
             .print-area ul {
                 padding-left: 8px;
                 max-width: 100%;
                 margin: 0 auto;
             }
+
             .print-area li {
                 margin-bottom: 2px;
                 font-size: 12px;
             }
-            .print-area h2, .print-area h3, .print-area ul, .print-area table {
+
+            .print-area h2,
+            .print-area h3,
+            .print-area ul,
+            .print-area table {
                 page-break-inside: avoid;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="bpm-section">
@@ -150,7 +169,7 @@
             <p id="suggestion"></p>
             <button class="btn" onclick="resetMeasurement()">🔄 Reset & Measure Again</button>
         </div>
-        
+
         <div class="bpm-history">
             <h2>BPM History</h2>
             <ul id="history-list" class="history-list"></ul>
@@ -205,8 +224,11 @@
             if (bpmValue && bpmValue !== "RESET") {
                 document.getElementById("bpm").innerText = `BPM: ${bpmValue}`;
                 
-                // Push the new data to Firebase.
-                await set(push(historyRef), { bpm: bpmValue, timestamp: new Date().toLocaleString() });
+                const alreadyExists = await checkDuplicate(bpmValue);
+
+                if (!alreadyExists) {
+                    await set(push(historyRef), { bpm: bpmValue, timestamp: new Date().toLocaleString() });
+                }
 
                 const { suggestion, advice } = getAdvice(bpmValue);
                 document.getElementById("suggestion").innerText = suggestion;
@@ -215,6 +237,22 @@
             }
         });
 
+        async function checkDuplicate(bpmValue) {
+            const queryTimestamp = new Date().toLocaleString();
+            return new Promise((resolve) => {
+                onValue(historyRef, (snapshot) => {
+                    let exists = false;
+                    snapshot.forEach((childSnapshot) => {
+                        const { bpm, timestamp } = childSnapshot.val();
+                        if (childSnapshot.val().bpm === bpmValue && timestamp === queryTimestamp) {
+                            exists = true;
+                        }
+                    });
+                    resolve(exists);
+                });
+            });
+        }
+
         onValue(historyRef, (snapshot) => {
             const historyList = document.getElementById("history-list");
             historyList.innerHTML = "";
@@ -222,16 +260,17 @@
 
             snapshot.forEach((childSnapshot) => {
                 const { bpm, timestamp } = childSnapshot.val();
-                items.push({ bpm, timestamp });
+                items.push({ bpm, timestamp, key: childSnapshot.key });
             });
 
-            // Reverse the items array to show the latest first.
-            items.reverse().forEach(({ bpm, timestamp }) => {
+            items.reverse().forEach(({ bpm, timestamp, key }) => {
                 const li = document.createElement("li");
                 li.textContent = `BPM: ${bpm} - ${timestamp}`;
+                
                 const deleteButton = document.createElement("button");
                 deleteButton.textContent = "🗑";
-                deleteButton.onclick = () => deleteEntry(childSnapshot.key);
+                deleteButton.onclick = () => deleteEntry(key);
+                
                 li.appendChild(deleteButton);
                 historyList.appendChild(li);
             });
@@ -279,22 +318,31 @@
         };
 
         function getAdvice(bpmValue) {
+            let suggestion, advice;
+
             if (bpmValue < 60) {
-                return {
-                    suggestion: "Low BPM - Consider light exercise.",
-                    advice: "Try mild cardio activities like walking or stretching. Stay hydrated and avoid excessive caffeine."
-                };
+                suggestion = "Low BPM - Consider light exercise.";
+                advice = `Advice: 
+                - Try mild cardio activities such as walking or light jogging. 
+                - Aim for at least 15-30 minutes of light exercise daily. 
+                - Healthy foods: Incorporate bananas and oats into your diet for energy. 
+                - Stay hydrated and avoid excessive caffeine.`;
             } else if (bpmValue <= 100) {
-                return {
-                    suggestion: "Normal BPM - Keep up the healthy routine!",
-                    advice: "Maintain regular physical activity and a balanced diet to sustain heart health."
-                };
+                suggestion = "Normal BPM - Keep up the healthy routine!";
+                advice = `Advice: 
+                - Maintain regular physical activity including cardio exercises 3-4 times a week. 
+                - Healthy foods: Include leafy greens, nuts, and lean proteins in your meals. 
+                - Keep well-hydrated and manage stress.`;
             } else {
-                return {
-                    suggestion: "High BPM - Relax and breathe deeply.",
-                    advice: "Try meditation, deep breathing, or reducing caffeine intake. Consult a doctor if consistently high."
-                };
+                suggestion = "High BPM - Relax and breathe deeply.";
+                advice = `Advice: 
+                - Engage in relaxation techniques such as meditation or yoga. 
+                - Take deep breaths to calm your heart rate. 
+                - Healthy foods: Drink herbal teas, eat fruits, and choose whole grains. 
+                - Limit caffeine and consult a medical professional if consistently high.`;
             }
+
+            return { suggestion, advice };
         }
     </script>
 </body>
