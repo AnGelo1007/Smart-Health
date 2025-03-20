@@ -10,29 +10,33 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #f0f8ff;
+            background-color: #a7d0f5;
             font-family: Arial, sans-serif;
             flex-direction: column;
+            margin: 0;
+            padding: 0;
         }
 
         .container {
             display: flex;
-            gap: 20px;
-            background: white;
             padding: 20px;
+            background: white;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
             width: 80%;
             min-width: 600px;
+            margin: 10px 0;
         }
 
         .bpm-section, .bpm-history {
             flex: 1;
             text-align: center;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            margin: 5px;
+        }
+
+        h2, h3 {
+            margin: 2px 0;
         }
 
         .bpm-box {
@@ -40,7 +44,6 @@
             font-weight: bold;
             padding: 10px;
             background: #ffeb3b;
-            display: inline-block;
             border-radius: 8px;
             margin-top: 10px;
         }
@@ -48,6 +51,9 @@
         .history-list {
             list-style-type: none;
             padding: 0;
+            margin: 5px 0;
+            height: 200px;
+            overflow-y: auto; /* Enables scrolling */
         }
 
         .history-list li {
@@ -60,7 +66,7 @@
             align-items: center;
         }
 
-        .reset-btn, .clear-btn, .print-btn {
+        .btn {
             margin-top: 10px;
             padding: 10px 20px;
             font-size: 16px;
@@ -71,42 +77,25 @@
             cursor: pointer;
         }
 
-        .reset-btn:hover, .clear-btn:hover, .print-btn:hover {
+        .btn:hover {
             background-color: #0056b3;
         }
 
         .advice-section {
-            margin-top: 20px;
-            padding: 20px;
-            width: 80%;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            display: none;
-        }
-
-        .advice-section h2 {
-            text-align: center;
-            font-size: 22px;
-            font-weight: bold;
-            color: #007BFF;
-        }
-
-        .advice-text {
-            font-size: 16px;
-            color: #333;
-            text-align: left;
+            background: #ecfefe; /* Light green background for advice section */
+            border: 1px solid #c8e6c9; /* Light border */
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
         }
 
         @media print {
             body * {
                 visibility: hidden;
             }
-
             .print-area, .print-area * {
                 visibility: visible;
             }
-
             .print-area {
                 position: fixed;
                 left: 0;
@@ -114,32 +103,41 @@
                 width: 100%;
                 height: 100%;
                 background: white;
-                padding: 20px;
+                padding: 2px;
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
-                align-items: center;
-                text-align: center;
+                text-align: left;
             }
-
             .print-area h2, .print-area h3 {
-                margin: 10px;
                 text-align: center;
+                font-size: 16px;
             }
-
+            .print-area table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 12px;
+            }
+            .print-area th, .print-area td {
+                border: 1px solid black;
+                padding: 2px;
+                text-align: left;
+            }
+            .print-area th {
+                background-color: #ffeb3b;
+            }
             .print-area ul {
-                padding-left: 0;
+                padding-left: 8px;
                 max-width: 100%;
                 margin: 0 auto;
             }
-
             .print-area li {
-                margin-bottom: 10px;
+                margin-bottom: 2px;
+                font-size: 12px;
             }
-        }
-
-        .print-area h2, .print-area h3, .print-area ul {
-            page-break-inside: avoid;
+            .print-area h2, .print-area h3, .print-area ul, .print-area table {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -150,25 +148,34 @@
             <p>Latest BPM Reading:</p>
             <div id="bpm" class="bpm-box">Waiting for data...</div>
             <p id="suggestion"></p>
-            <button class="reset-btn" onclick="resetMeasurement()">🔄 Reset & Measure Again</button>
+            <button class="btn" onclick="resetMeasurement()">🔄 Reset & Measure Again</button>
         </div>
         
         <div class="bpm-history">
             <h2>BPM History</h2>
             <ul id="history-list" class="history-list"></ul>
-            <button class="clear-btn" onclick="clearHistory()">🗑 Clear History</button>
-            <button class="print-btn" onclick="printHistory()">🖨 Print Report</button>
+            <button class="btn" onclick="clearHistory()">🗑 Clear History</button>
+            <button class="btn" onclick="printHistory()">🖨 Print Report</button>
         </div>
     </div>
 
-    <div class="advice-section" id="advice-section">
+    <div class="advice-section" id="advice-section" style="display: none;">
         <h2>Non-Prescription Advice</h2>
-        <p id="advice-text" class="advice-text"></p>
+        <p id="advice-text"></p>
     </div>
 
     <div class="print-area" style="display: none;">
         <h2>BPM History Report</h2>
-        <ul id="print-history"></ul>
+        <table id="print-history">
+            <thead>
+                <tr>
+                    <th>BPM</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="print-history-body"></tbody>
+        </table>
         <h3>Non-Prescription Advice</h3>
         <p id="print-advice"></p>
     </div>
@@ -195,25 +202,13 @@
 
         onValue(bpmRef, async (snapshot) => {
             const bpmValue = snapshot.val();
-            if (bpmValue !== null && bpmValue !== "RESET") {
+            if (bpmValue && bpmValue !== "RESET") {
                 document.getElementById("bpm").innerText = `BPM: ${bpmValue}`;
-                const newEntryRef = push(historyRef);
-                await set(newEntryRef, { bpm: bpmValue, timestamp: new Date().toLocaleString() });
+                
+                // Push the new data to Firebase.
+                await set(push(historyRef), { bpm: bpmValue, timestamp: new Date().toLocaleString() });
 
-                let suggestion = "";
-                let advice = "";
-
-                if (bpmValue < 60) {
-                    suggestion = "Low BPM - Consider light exercise.";
-                    advice = "Try mild cardio activities like walking or stretching. Stay hydrated and avoid excessive caffeine.";
-                } else if (bpmValue >= 60 && bpmValue <= 100) {
-                    suggestion = "Normal BPM - Keep up the healthy routine!";
-                    advice = "Maintain regular physical activity and a balanced diet to sustain heart health.";
-                } else {
-                    suggestion = "High BPM - Relax and breathe deeply.";
-                    advice = "Try meditation, deep breathing, or reducing caffeine intake. Consult a doctor if consistently high.";
-                }
-
+                const { suggestion, advice } = getAdvice(bpmValue);
                 document.getElementById("suggestion").innerText = suggestion;
                 document.getElementById("advice-text").innerText = advice;
                 document.getElementById("advice-section").style.display = "block";
@@ -223,17 +218,21 @@
         onValue(historyRef, (snapshot) => {
             const historyList = document.getElementById("history-list");
             historyList.innerHTML = "";
-            snapshot.forEach((childSnapshot) => {
-                const data = childSnapshot.val();
-                const key = childSnapshot.key;
-                const li = document.createElement("li");
-                li.textContent = `BPM: ${data.bpm} - ${data.timestamp}`;
+            const items = [];
 
+            snapshot.forEach((childSnapshot) => {
+                const { bpm, timestamp } = childSnapshot.val();
+                items.push({ bpm, timestamp });
+            });
+
+            // Reverse the items array to show the latest first.
+            items.reverse().forEach(({ bpm, timestamp }) => {
+                const li = document.createElement("li");
+                li.textContent = `BPM: ${bpm} - ${timestamp}`;
                 const deleteButton = document.createElement("button");
                 deleteButton.textContent = "🗑";
-                deleteButton.onclick = () => deleteEntry(key);
+                deleteButton.onclick = () => deleteEntry(childSnapshot.key);
                 li.appendChild(deleteButton);
-
                 historyList.appendChild(li);
             });
         });
@@ -252,27 +251,51 @@
         };
 
         function deleteEntry(key) {
-            const entryRef = ref(database, `bpm_history/${key}`);
-            remove(entryRef);
+            remove(ref(database, `bpm_history/${key}`));
         }
 
         window.printHistory = function () {
-            const printHistory = document.getElementById("print-history");
-            const printAdvice = document.getElementById("advice-text").innerText;
-            printHistory.innerHTML = "";
-            const historyList = document.getElementById("history-list").children;
+            const printHistoryBody = document.getElementById("print-history-body");
+            printHistoryBody.innerHTML = "";
+            const historyItems = document.getElementById("history-list").children;
 
-            for (let i = 0; i < historyList.length; i++) {
-                const li = document.createElement("li");
-                li.textContent = historyList[i].textContent;
-                printHistory.appendChild(li);
-            }
-            document.getElementById("print-advice").innerText = printAdvice;
+            [...historyItems].forEach(item => {
+                const [bpmText, timestamp] = item.textContent.replace("🗑", "").trim().split(' - ');
+                const bpm = bpmText.split(': ')[1]; 
+                const [date, time] = timestamp.split(', ');
+
+                const row = printHistoryBody.insertRow();
+                row.insertCell(0).textContent = bpm;
+                row.insertCell(1).textContent = date;
+                row.insertCell(2).textContent = time;
+            });
+
+            document.getElementById("print-advice").innerText = document.getElementById("advice-text").innerText;
+
             const printArea = document.querySelector('.print-area');
             printArea.style.display = 'block';
             window.print();
             printArea.style.display = 'none';
         };
+
+        function getAdvice(bpmValue) {
+            if (bpmValue < 60) {
+                return {
+                    suggestion: "Low BPM - Consider light exercise.",
+                    advice: "Try mild cardio activities like walking or stretching. Stay hydrated and avoid excessive caffeine."
+                };
+            } else if (bpmValue <= 100) {
+                return {
+                    suggestion: "Normal BPM - Keep up the healthy routine!",
+                    advice: "Maintain regular physical activity and a balanced diet to sustain heart health."
+                };
+            } else {
+                return {
+                    suggestion: "High BPM - Relax and breathe deeply.",
+                    advice: "Try meditation, deep breathing, or reducing caffeine intake. Consult a doctor if consistently high."
+                };
+            }
+        }
     </script>
 </body>
 </html>
