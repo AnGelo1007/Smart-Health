@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Smart Health Monitoring</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js"></script>
-    
     <style>
         body {
             display: flex;
@@ -15,6 +12,7 @@
             height: 100vh;
             background-color: #f0f8ff;
             font-family: Arial, sans-serif;
+            flex-direction: column;
         }
 
         .container {
@@ -35,9 +33,6 @@
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
         }
 
         .bpm-box {
@@ -50,17 +45,25 @@
             margin-top: 10px;
         }
 
-        .suggestion {
-            margin-top: 10px;
-            font-size: 18px;
-            font-weight: bold;
-            color: #333;
+        .history-list {
+            list-style-type: none;
+            padding: 0;
         }
 
-        .reset-btn {
-            margin-top: 20px;
+        .history-list li {
+            background: #e3f2fd;
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reset-btn, .clear-btn, .print-btn {
+            margin-top: 10px;
             padding: 10px 20px;
-            font-size: 18px;
+            font-size: 16px;
             background-color: #007BFF;
             color: white;
             border: none;
@@ -68,41 +71,75 @@
             cursor: pointer;
         }
 
-        .reset-btn:hover {
+        .reset-btn:hover, .clear-btn:hover, .print-btn:hover {
             background-color: #0056b3;
         }
 
-        .history-list {
-            list-style: none;
-            padding: 0;
-            max-height: 300px;
-            overflow-y: auto;
-            flex-grow: 1;
+        .advice-section {
+            margin-top: 20px;
+            padding: 20px;
+            width: 80%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            display: none;
         }
 
-        .history-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            background: #f9f9f9;
-            border-radius: 5px;
-            margin: 5px auto;
-            width: 90%;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        .advice-section h2 {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            color: #007BFF;
         }
 
-        .delete-btn {
-            background: red;
-            color: white;
-            border: none;
-            padding: 5px;
-            cursor: pointer;
-            border-radius: 3px;
+        .advice-text {
+            font-size: 16px;
+            color: #333;
+            text-align: left;
         }
 
-        .delete-btn:hover {
-            background: darkred;
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .print-area, .print-area * {
+                visibility: visible;
+            }
+
+            .print-area {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background: white;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+            }
+
+            .print-area h2, .print-area h3 {
+                margin: 10px;
+                text-align: center;
+            }
+
+            .print-area ul {
+                padding-left: 0;
+                max-width: 100%;
+                margin: 0 auto;
+            }
+
+            .print-area li {
+                margin-bottom: 10px;
+            }
+        }
+
+        .print-area h2, .print-area h3, .print-area ul {
+            page-break-inside: avoid;
         }
     </style>
 </head>
@@ -112,19 +149,33 @@
             <h1>Heart Rate Monitor</h1>
             <p>Latest BPM Reading:</p>
             <div id="bpm" class="bpm-box">Waiting for data...</div>
-            <p id="suggestion" class="suggestion"></p>
+            <p id="suggestion"></p>
             <button class="reset-btn" onclick="resetMeasurement()">🔄 Reset & Measure Again</button>
         </div>
         
         <div class="bpm-history">
             <h2>BPM History</h2>
             <ul id="history-list" class="history-list"></ul>
+            <button class="clear-btn" onclick="clearHistory()">🗑 Clear History</button>
+            <button class="print-btn" onclick="printHistory()">🖨 Print Report</button>
         </div>
     </div>
-    
+
+    <div class="advice-section" id="advice-section">
+        <h2>Non-Prescription Advice</h2>
+        <p id="advice-text" class="advice-text"></p>
+    </div>
+
+    <div class="print-area" style="display: none;">
+        <h2>BPM History Report</h2>
+        <ul id="print-history"></ul>
+        <h3>Non-Prescription Advice</h3>
+        <p id="print-advice"></p>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAv8BTWravcmLi4Yr2GHLCqiRmYK3C2p90",
@@ -139,55 +190,89 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const bpmRef = ref(database, "bpm_data/bpm");
+        const resetRef = ref(database, "bpm_data/reset");
         const historyRef = ref(database, "bpm_history");
 
         onValue(bpmRef, async (snapshot) => {
             const bpmValue = snapshot.val();
-            const bpmElement = document.getElementById("bpm");
-            const suggestionElement = document.getElementById("suggestion");
-
             if (bpmValue !== null && bpmValue !== "RESET") {
-                bpmElement.innerText = `BPM: ${bpmValue}`;
+                document.getElementById("bpm").innerText = `BPM: ${bpmValue}`;
+                const newEntryRef = push(historyRef);
+                await set(newEntryRef, { bpm: bpmValue, timestamp: new Date().toLocaleString() });
 
-                const timestamp = new Date().toLocaleString();
-                const historySnapshot = await get(historyRef);
-                const historyExists = historySnapshot.exists() && Object.values(historySnapshot.val()).some(entry => entry.bpm === bpmValue && entry.timestamp === timestamp);
+                let suggestion = "";
+                let advice = "";
 
-                if (!historyExists) push(historyRef, { bpm: bpmValue, timestamp });
+                if (bpmValue < 60) {
+                    suggestion = "Low BPM - Consider light exercise.";
+                    advice = "Try mild cardio activities like walking or stretching. Stay hydrated and avoid excessive caffeine.";
+                } else if (bpmValue >= 60 && bpmValue <= 100) {
+                    suggestion = "Normal BPM - Keep up the healthy routine!";
+                    advice = "Maintain regular physical activity and a balanced diet to sustain heart health.";
+                } else {
+                    suggestion = "High BPM - Relax and breathe deeply.";
+                    advice = "Try meditation, deep breathing, or reducing caffeine intake. Consult a doctor if consistently high.";
+                }
 
-                // BPM Suggestions
-                bpmElement.style.color = bpmValue < 60 || bpmValue > 100 ? "red" : "green";
-                suggestionElement.innerText = bpmValue < 60 ? "Heart rate is low. Consider light exercise or consulting a doctor."
-                    : bpmValue > 100 ? "Heart rate is high. Try to relax and breathe deeply."
-                    : "Heart rate is normal. Keep up a healthy lifestyle!";
+                document.getElementById("suggestion").innerText = suggestion;
+                document.getElementById("advice-text").innerText = advice;
+                document.getElementById("advice-section").style.display = "block";
             }
         });
 
-        function loadHistory() {
-            onValue(historyRef, (snapshot) => {
-                const historyList = document.getElementById("history-list");
-                historyList.innerHTML = snapshot.exists()
-                    ? Object.entries(snapshot.val()).reverse().map(([key, entry]) =>
-                        `<li>${entry.timestamp} - BPM: <strong>${entry.bpm}</strong>
-                        <button class="delete-btn" onclick="deleteEntry('${key}')">🗑</button></li>`
-                    ).join("")
-                    : "<li>No BPM history available.</li>";
+        onValue(historyRef, (snapshot) => {
+            const historyList = document.getElementById("history-list");
+            historyList.innerHTML = "";
+            snapshot.forEach((childSnapshot) => {
+                const data = childSnapshot.val();
+                const key = childSnapshot.key;
+                const li = document.createElement("li");
+                li.textContent = `BPM: ${data.bpm} - ${data.timestamp}`;
+
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "🗑";
+                deleteButton.onclick = () => deleteEntry(key);
+                li.appendChild(deleteButton);
+
+                historyList.appendChild(li);
             });
-        }
+        });
 
-        function deleteEntry(key) {
-            remove(ref(database, `bpm_history/${key}`));
-        }
-
-        function resetMeasurement() {
-            set(ref(database, "bpm_data/reset"), true);
+        window.resetMeasurement = function () {
+            set(resetRef, true);
             document.getElementById("bpm").innerText = "Waiting for data...";
             document.getElementById("suggestion").innerText = "";
+            document.getElementById("advice-text").innerText = "";
+            document.getElementById("advice-section").style.display = "none";
+        };
+
+        window.clearHistory = function () {
+            remove(historyRef);
+            document.getElementById("history-list").innerHTML = "";
+        };
+
+        function deleteEntry(key) {
+            const entryRef = ref(database, `bpm_history/${key}`);
+            remove(entryRef);
         }
 
-        loadHistory();
-        window.deleteEntry = deleteEntry;
-        window.resetMeasurement = resetMeasurement;
+        window.printHistory = function () {
+            const printHistory = document.getElementById("print-history");
+            const printAdvice = document.getElementById("advice-text").innerText;
+            printHistory.innerHTML = "";
+            const historyList = document.getElementById("history-list").children;
+
+            for (let i = 0; i < historyList.length; i++) {
+                const li = document.createElement("li");
+                li.textContent = historyList[i].textContent;
+                printHistory.appendChild(li);
+            }
+            document.getElementById("print-advice").innerText = printAdvice;
+            const printArea = document.querySelector('.print-area');
+            printArea.style.display = 'block';
+            window.print();
+            printArea.style.display = 'none';
+        };
     </script>
 </body>
 </html>
